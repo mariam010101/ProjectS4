@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Football Match Predictor</title>
+<style>
+    :root {
+        --bg: #ffffff;
+        --surface: #ffffff;
+        --surface-2: #f7f8fa;
+        --border: #e6e8ec;
+        --border-strong: #d3d6dc;
+        --text: #1a1d23;
+        --text-muted: #6b7280;
+        --text-soft: #8a8f99;
+        --accent: #1a1d23;
+        --accent-soft: #f1f3f6;
+        --green: #2f9e44;
+        --amber: #c08400;
+        --red:   #c13a2e;
+        --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                     "Helvetica Neue", Arial, sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 24px 64px;
+    }
+
+    /* ---------- Header ---------- */
+    header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 28px;
+    }
+    header .title {
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+    header .subtitle {
+        font-size: 14px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+    header .status {
+        font-size: 13px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--text-soft);
+    }
+    .dot.online   { background: var(--green); }
+    .dot.offline  { background: var(--red); }
+
+    /* ---------- Filters ---------- */
+    .filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-group label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-soft);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .filter-group input,
+    .filter-group select {
+        padding: 9px 11px;
+        border: 1px solid var(--border-strong);
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: inherit;
+        background: var(--bg);
+        color: var(--text);
+    }
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: var(--text);
+    }
+    .actions { display: flex; gap: 8px; align-items: flex-end; }
+    .btn {
+        background: var(--text);
+        color: #ffffff;
+        border: 1px solid var(--text);
+        padding: 9px 14px;
+        font-size: 14px;
+        font-family: inherit;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .btn.secondary {
+        background: var(--bg);
+        color: var(--text);
+    }
+    .btn:hover { opacity: 0.9; }
+
+    /* ---------- Matches list ---------- */
+    .layout {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 16px;
+        align-items: start;
+    }
+    .matches {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .match {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: border-color 0.1s;
+    }
+    .match:hover { border-color: var(--border-strong); }
+    .match.active { border-color: var(--text); }
+
+    .match-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .match-teams { font-size: 15px; font-weight: 600; }
+    .match-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .match-meta .sep::before { content: "·"; margin-right: 10px; color: var(--text-soft); }
+
+    .match-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--surface-2);
+        color: var(--text-muted);
+        letter-spacing: 0.02em;
+    }
+    .badge.green { color: var(--green); border-color: #cfe6d3; background: #f1faf3; }
+    .badge.amber { color: var(--amber); border-color: #ecd9b3; background: #fbf4e6; }
+    .badge.red   { color: var(--red);   border-color: #ecc1bc; background: #fbf0ee; }
+
+    .empty {
+        padding: 40px;
+        text-align: center;
+        color: var(--text-muted);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+    }
+
+    /* ---------- Detail panel ---------- */
+    .panel {
+        position: sticky;
+        top: 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px;
+    }
+    .panel h2 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+    .panel .panel-meta {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 18px;
+    }
+
+    .prob-block { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+    .prob {
+        display: grid;
+        grid-template-columns: 90px 1fr 50px;
+        align-items: center;
+        gap: 12px;
+        font-size: 13px;
+    }
+    .prob-label { font-weight: 600; color: var(--text); }
+    .prob-bar {
+        height: 8px;
+        background: var(--surface-2);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .prob-bar > span {
+        display: block; height: 100%;
+        background: var(--text);
+        border-radius: 4px;
+    }
+    .prob-value { text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+    .summary {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+    .summary .card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        background: var(--surface-2);
+    }
+    .summary .card .label {
+        font-size: 11px;
+        color: var(--text-soft);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+    .summary .card .value {
+        font-size: 17px;
+        font-weight: 600;
+    }
+
+    .odds {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    .odds .card { text-align: center; }
+
+    .note {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 11px 13px;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .placeholder {
+        color: var(--text-muted);
+        font-size: 14px;
+        padding: 40px 0;
+        text-align: center;
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 900px) {
+        .layout { grid-template-columns: 1fr; }
+        .panel { position: static; }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div>
+            <div class="title">Football Match Predictor</div>
+            <div class="subtitle">Real match data from football-data.co.uk</div>
+        </div>
+        <div class="status" id="status">
+            <span class="dot" id="statusDot"></span>
+            <span id="statusText">Connecting...</span>
+        </div>
+    </header>
+
+    <section class="filters">
+        <div class="filter-group">
+            <label>League</label>
+            <select id="leagueFilter">
+                <option value="">All leagues</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Status</label>
+            <select id="statusFilter">
+                <option value="">All</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="finished">Finished</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Risk level</label>
+            <select id="riskFilter">
+                <option value="">All</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Search team</label>
+            <input id="searchInput" type="text" placeholder="e.g. Arsenal">
+        </div>
+        <div class="actions">
+            <button class="btn secondary" id="refreshBtn">Refresh</button>
+            <button class="btn" id="scrapeBtn" title="Pull the latest matches and fixtures">Update data</button>
+        </div>
+    </section>
+
+    <div class="layout">
+        <div class="matches" id="matches">
+            <div class="empty">Loading matches...</div>
+        </div>
+
+        <aside class="panel" id="panel">
+            <div class="placeholder">Select a match to see the breakdown.</div>
+        </aside>
+    </div>
+</div>
+
+<script>
+const API = (location.port === '8000' || location.protocol === 'file:')
+            ? 'http://localhost:8000'
+            : '';
+let matches = [];
+let activeId = null;
+
+async function init() {
+    await checkStatus();
+    await loadLeagues();
+    await loadMatches();
+    document.getElementById('refreshBtn').addEventListener('click', loadMatches);
+    document.getElementById('scrapeBtn').addEventListener('click', runScrape);
+    document.getElementById('leagueFilter').addEventListener('change', loadMatches);
+    document.getElementById('statusFilter').addEventListener('change', loadMatches);
+    document.getElementById('riskFilter').addEventListener('change', renderMatches);
+    document.getElementById('searchInput').addEventListener('input', debounce(loadMatches, 250));
+}
+
+function debounce(fn, ms) {
+    let t;
+    return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+}
+
+async function checkStatus() {
+    try {
+        const r = await fetch(`${API}/`);
+        const j = await r.json();
+        const dot = document.getElementById('statusDot');
+        const txt = document.getElementById('statusText');
+        if (j.status === 'ok') {
+            dot.className = 'dot online';
+            txt.textContent = `Connected · ${j.matches_in_db} matches loaded`;
+        } else {
+            dot.className = 'dot offline';
+            txt.textContent = 'Service unavailable';
+        }
+    } catch {
+        document.getElementById('statusDot').className = 'dot offline';
+        document.getElementById('statusText').textContent = 'Service offline';
+    }
+}
+
+async function loadLeagues() {
+    try {
+        const leagues = await (await fetch(`${API}/leagues`)).json();
+        const sel = document.getElementById('leagueFilter');
+        for (const l of leagues) {
+            const o = document.createElement('option');
+            o.value = l; o.textContent = l;
+            sel.appendChild(o);
+        }
+    } catch {}
+}
+
+async function loadMatches() {
+    const params = new URLSearchParams();
+    const league = document.getElementById('leagueFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const search = document.getElementById('searchInput').value.trim();
+    if (league) params.append('league', league);
+    if (status) params.append('status', status);
+    if (search) params.append('search', search);
+
+    document.getElementById('matches').innerHTML =
+        '<div class="empty">Loading matches...</div>';
+    try {
+        matches = await (await fetch(`${API}/matches?${params}`)).json();
+        renderMatches();
+    } catch (e) {
+        document.getElementById('matches').innerHTML =
+            '<div class="empty">Could not load matches.</div>';
+    }
+}
+
+function renderMatches() {
+    const riskFilter = document.getElementById('riskFilter').value;
+    let list = matches;
+    if (riskFilter) list = list.filter(m => m.risk_level === riskFilter);
+
+    const root = document.getElementById('matches');
+    if (!list.length) {
+        root.innerHTML = '<div class="empty">No matches match your filters. ' +
+            'Try clicking <b>Update data</b> to fetch the latest fixtures.</div>';
+        return;
+    }
+    root.innerHTML = list.map(renderRow).join('');
+    root.querySelectorAll('.match').forEach(el => {
+        el.addEventListener('click', () => selectMatch(parseInt(el.dataset.id)));
+    });
+}
+
+function renderRow(m) {
+    const score = (m.home_goals != null && m.away_goals != null)
+                  ? ` <span class="match-meta">${m.home_goals} – ${m.away_goals}</span>`
+                  : '';
+    const riskBadge = m.risk_level
+        ? `<span class="badge ${riskColor(m.risk_level)}">Risk: ${m.risk_level}</span>`
+        : '';
+    return `
+        <div class="match ${m.id === activeId ? 'active' : ''}" data-id="${m.id}">
+            <div class="match-main">
+                <div class="match-teams">${m.home_team} vs ${m.away_team}${score}</div>
+                <div class="match-meta">
+                    <span>${m.match_date}</span>
+                    <span class="sep">${m.league}</span>
+                    <span class="sep">${capitalize(m.status)}</span>
+                </div>
+            </div>
+            <div class="match-side">
+                ${riskBadge}
+                ${m.odds_home ? `<span class="badge">${fmt(m.odds_home)} / ${fmt(m.odds_draw)} / ${fmt(m.odds_away)}</span>` : ''}
+            </div>
+        </div>`;
+}
+
+function fmt(x) { return x == null ? '—' : Number(x).toFixed(2); }
+function capitalize(s) { return s ? s[0].toUpperCase() + s.slice(1) : ''; }
+function riskColor(level) {
+    return level === 'low' ? 'green' : level === 'high' ? 'red' : 'amber';
+}
+
+async function selectMatch(id) {
+    activeId = id;
+    renderMatches();
+    document.getElementById('panel').innerHTML = '<div class="placeholder">Loading...</div>';
+    try {
+        const data = await (await fetch(`${API}/matches/${id}`)).json();
+        renderPanel(data);
+    } catch {
+        document.getElementById('panel').innerHTML =
+            '<div class="placeholder">Could not load match details.</div>';
+    }
+}
+
+function renderPanel({match, prediction}) {
+    const probs = [
+        ['Home win', prediction.home_win],
+        ['Draw',     prediction.draw],
+        ['Away win', prediction.away_win],
+    ];
+    const score = (match.home_goals != null && match.away_goals != null)
+                  ? `<span class="badge">Final: ${match.home_goals}–${match.away_goals}</span>`
+                  : `<span class="badge">${capitalize(match.status)}</span>`;
+
+    document.getElementById('panel').innerHTML = `
+        <h2>${match.home_team} vs ${match.away_team}</h2>
+        <div class="panel-meta">${match.match_date} · ${match.league} ${score}</div>
+
+        <div class="prob-block">
+            ${probs.map(([k,v]) => `
+                <div class="prob">
+                    <span class="prob-label">${k}</span>
+                    <span class="prob-bar"><span style="width:${(v*100).toFixed(1)}%"></span></span>
+                    <span class="prob-value">${(v*100).toFixed(1)}%</span>
+                </div>`).join('')}
+        </div>
+
+        <div class="summary">
+            <div class="card">
+                <div class="label">Most likely</div>
+                <div class="value">${prediction.most_likely}</div>
+            </div>
+            <div class="card">
+                <div class="label">Confidence</div>
+                <div class="value">${(prediction.confidence*100).toFixed(1)}%</div>
+            </div>
+            <div class="card">
+                <div class="label">Risk score</div>
+                <div class="value">${prediction.risk_score.toFixed(0)} / 100</div>
+            </div>
+            <div class="card">
+                <div class="label">Risk level</div>
+                <div class="value" style="text-transform:capitalize">${prediction.risk_level}</div>
+            </div>
+        </div>
+
+        ${match.odds_home ? `
+        <div class="odds">
+            <div class="card"><div class="label">Home odds</div><div class="value">${fmt(match.odds_home)}</div></div>
+            <div class="card"><div class="label">Draw odds</div><div class="value">${fmt(match.odds_draw)}</div></div>
+            <div class="card"><div class="label">Away odds</div><div class="value">${fmt(match.odds_away)}</div></div>
+        </div>` : ''}
+
+        <div class="note">${prediction.explanation}</div>
+    `;
+}
+
+async function runScrape() {
+    const btn = document.getElementById('scrapeBtn');
+    btn.disabled = true; btn.textContent = 'Updating...';
+    try {
+        const r = await fetch(`${API}/scrape`, {method: 'POST'});
+        const j = await r.json();
+        await loadMatches();
+        await checkStatus();
+        if (!j.ok) alert('Scrape finished with warnings. Check the server log.');
+    } catch (e) {
+        alert('Could not run the scraper. Make sure the backend is running.');
+    } finally {
+        btn.disabled = false; btn.textContent = 'Update data';
+    }
+}
+
+init();
+</script>
+</body>
+</html>
