@@ -1,6 +1,6 @@
 # Football Prediction & Betting Risk System
 
-A two-layer data project combining a **machine learning pipeline** for match outcome prediction with a **fully normalised SQL Server database** for structured storage, querying, and access control. The system processes 10 seasons of English Premier League data (2015/16–2024/25), estimates result probabilities, and exposes computed risk features through a relational database designed to production database standards.Thpugh the interface uses real up-to-date matches by data scraping. 
+A two-layer data project combining a **machine learning pipeline** for match outcome prediction with a **fully normalised SQL Server database** for structured storage, querying, and access control. The system processes 10 seasons of English Premier League data (2015/16–2024/25), estimates result probabilities, and exposes computed risk features through a relational database designed to production database standards.Though the interface uses real up-to-date matches with the help of data scraping. 
 
 ---
 
